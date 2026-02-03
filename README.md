@@ -1,2 +1,13 @@
 # TorRelayGrabber
-A tool for bridge grabbing Tor
+
+Этот инструмент служит для получения мостов браузера Тор в среде операционной системы Windows.
+Идея взята из [tor-relay-scanner](https://github.com/ValdikSS/tor-relay-scanner).   
+
+Программа имеет минималистический графический интерфейс, не требует установки и очень проста в работе.
+
+![ScreenShot](/art/TorRelayGrabber.png)
+
+Достаточно запустить процесс получения мостов, нажав кнопку Start и скопиовать полученный результат в настройки мостов браузера Тор.
+Если результ отсутствует, или не устраивает количество мостов, то можно указать большее их количество в поле Max Relays.
+
+[Скачать](https://github.com/flutomax/TorRelayGrabber/releases/) TorRelayGrabber.
