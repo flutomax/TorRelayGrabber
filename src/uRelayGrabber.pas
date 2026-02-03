@@ -47,7 +47,7 @@ type
     FOnMessage: TScanMessageEvent;
     FErrorMessage: string;
     FCurrentSource: string;
-    // Массив резервных URL (в порядке приоритета)
+    // РњР°СЃСЃРёРІ СЂРµР·РµСЂРІРЅС‹С… URL (РІ РїРѕСЂСЏРґРєРµ РїСЂРёРѕСЂРёС‚РµС‚Р°)
     class var FDataSourceURLs: TArray<string>;
     function CheckRelayPort(const AAddress: string; APort: Integer): Boolean;
     function TryFetchFromURL(const AURL: string): TJSONObject;
@@ -91,17 +91,17 @@ begin
 
   tempList := TList<TJSONValue>.Create;
   try
-    // Извлекаем все элементы из массива
+    // РР·РІР»РµРєР°РµРј РІСЃРµ СЌР»РµРјРµРЅС‚С‹ РёР· РјР°СЃСЃРёРІР°
     while JSONArray.Count > 0 do
     begin
       tempList.Add(JSONArray.Remove(0));
     end;
 
-    // Перемешиваем, извлекая случайные элементы
+    // РџРµСЂРµРјРµС€РёРІР°РµРј, РёР·РІР»РµРєР°СЏ СЃР»СѓС‡Р°Р№РЅС‹Рµ СЌР»РµРјРµРЅС‚С‹
     while tempList.Count > 0 do
     begin
       randomIndex := Random(tempList.Count);
-      // Используем AddElement, так как передаем существующий объект
+      // РСЃРїРѕР»СЊР·СѓРµРј AddElement, С‚Р°Рє РєР°Рє РїРµСЂРµРґР°РµРј СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РѕР±СЉРµРєС‚
       JSONArray.AddElement(tempList[randomIndex]);
       tempList.Delete(randomIndex);
     end;
@@ -122,10 +122,10 @@ begin
   FErrorMessage := '';
   FCurrentSource := '';
 
-  // Инициализируем стандартные источники, если еще не инициализированы
+  // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј СЃС‚Р°РЅРґР°СЂС‚РЅС‹Рµ РёСЃС‚РѕС‡РЅРёРєРё, РµСЃР»Рё РµС‰Рµ РЅРµ РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅС‹
   if Length(FDataSourceURLs) = 0 then
   begin
-    // Основной URL Tor Project
+    // РћСЃРЅРѕРІРЅРѕР№ URL Tor Project
     FDataSourceURLs := [
       'https://raw.githubusercontent.com/ValdikSS/tor-onionoo-mirror/master/details-running-relays-fingerprint-address-only.json',
       'https://bitbucket.org/ValdikSS/tor-onionoo-mirror/raw/master/details-running-relays-fingerprint-address-only.json'
@@ -151,7 +151,7 @@ var
   Relay: TTorRelay;
 begin
   try
-    // 1. Получение списка реле
+    // 1. РџРѕР»СѓС‡РµРЅРёРµ СЃРїРёСЃРєР° СЂРµР»Рµ
     FetchRelaysFromAnySource;
     if Terminated then
       Exit;
@@ -168,7 +168,7 @@ begin
     m := FRelays.Count;
     Synchronize(DoStarting);
     DoMessage(Format('Checking %d relays...', [FRelays.Count]));
-    // 2. Проверка доступности каждого реле
+    // 2. РџСЂРѕРІРµСЂРєР° РґРѕСЃС‚СѓРїРЅРѕСЃС‚Рё РєР°Р¶РґРѕРіРѕ СЂРµР»Рµ
     for I := FRelays.Count - 1 downto 0 do
     begin
       if Terminated then
@@ -178,18 +178,18 @@ begin
       DoProgress(n, m, Format('Checking %s (%s:%d) %s...',
         [Relay.Fingerprint, Relay.Address, Relay.ORPort, Relay.CountryCode]));
 
-      // Проверяем ORPort (основной порт Tor)
+      // РџСЂРѕРІРµСЂСЏРµРј ORPort (РѕСЃРЅРѕРІРЅРѕР№ РїРѕСЂС‚ Tor)
       Relay.IsAlive := CheckRelayPort(Relay.Address, Relay.ORPort);
       if Relay.IsAlive then
       begin
         Inc(AliveCount);
-        Relay.Latency := 0; // Здесь можно добавить реальный расчет времени отклика
+        Relay.Latency := 0; // Р—РґРµСЃСЊ РјРѕР¶РЅРѕ РґРѕР±Р°РІРёС‚СЊ СЂРµР°Р»СЊРЅС‹Р№ СЂР°СЃС‡РµС‚ РІСЂРµРјРµРЅРё РѕС‚РєР»РёРєР°
         FResults.Add(Relay);
-        FRelays.Extract(Relay); // Чтобы не освободился в деструкторе FRelays
+        FRelays.Extract(Relay); // Р§С‚РѕР±С‹ РЅРµ РѕСЃРІРѕР±РѕРґРёР»СЃСЏ РІ РґРµСЃС‚СЂСѓРєС‚РѕСЂРµ FRelays
       end
       else
       begin
-        // Дополнительная проверка DirPort (если нужно)
+        // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР° DirPort (РµСЃР»Рё РЅСѓР¶РЅРѕ)
         // Relay.IsAlive := CheckRelayPort(Relay.Address, Relay.DirPort);
       end;
     end;
@@ -213,7 +213,7 @@ var
 begin
   JSONData := nil;
 
-  // Пробуем все источники по очереди
+  // РџСЂРѕР±СѓРµРј РІСЃРµ РёСЃС‚РѕС‡РЅРёРєРё РїРѕ РѕС‡РµСЂРµРґРё
   for I := 0 to High(FDataSourceURLs) do
   begin
     if Terminated then
@@ -223,13 +223,13 @@ begin
     if Assigned(JSONData) then
       Break;
 
-    // Небольшая пауза между попытками
+    // РќРµР±РѕР»СЊС€Р°СЏ РїР°СѓР·Р° РјРµР¶РґСѓ РїРѕРїС‹С‚РєР°РјРё
     Sleep(1000);
   end;
 
   if not Assigned(JSONData) then
   begin
-    // достаём из ресурса
+    // РґРѕСЃС‚Р°С‘Рј РёР· СЂРµСЃСѓСЂСЃР°
     JSONData := TryFetchFromResource();
   end;
 
@@ -255,13 +255,13 @@ var
   IsValidCountry, IsValidAddress: Boolean;
   RootValue: TJSONValue;
 begin
-  // Получаем корневое значение - это может быть объект или массив
+  // РџРѕР»СѓС‡Р°РµРј РєРѕСЂРЅРµРІРѕРµ Р·РЅР°С‡РµРЅРёРµ - СЌС‚Рѕ РјРѕР¶РµС‚ Р±С‹С‚СЊ РѕР±СЉРµРєС‚ РёР»Рё РјР°СЃСЃРёРІ
   RootValue := JSONData;
 
-  // Сбросим указатель на массив
+  // РЎР±СЂРѕСЃРёРј СѓРєР°Р·Р°С‚РµР»СЊ РЅР° РјР°СЃСЃРёРІ
   RelaysArray := nil;
 
-  // Вариант 1: JSONData уже содержит массив relays в поле "relays"
+  // Р’Р°СЂРёР°РЅС‚ 1: JSONData СѓР¶Рµ СЃРѕРґРµСЂР¶РёС‚ РјР°СЃСЃРёРІ relays РІ РїРѕР»Рµ "relays"
   CountryValue := JSONData.GetValue('relays');
   if (CountryValue <> nil) and (CountryValue is TJSONArray) then
   begin
@@ -269,9 +269,9 @@ begin
   end
   else
   begin
-    // Вариант 2: JSONData это сам массив (без обертки в объект)
-    // НО: JSONData объявлен как TJSONObject, поэтому такой вариант невозможен
-    // Значит, если нет поля 'relays', то это ошибка формата
+    // Р’Р°СЂРёР°РЅС‚ 2: JSONData СЌС‚Рѕ СЃР°Рј РјР°СЃСЃРёРІ (Р±РµР· РѕР±РµСЂС‚РєРё РІ РѕР±СЉРµРєС‚)
+    // РќРћ: JSONData РѕР±СЉСЏРІР»РµРЅ РєР°Рє TJSONObject, РїРѕСЌС‚РѕРјСѓ С‚Р°РєРѕР№ РІР°СЂРёР°РЅС‚ РЅРµРІРѕР·РјРѕР¶РµРЅ
+    // Р—РЅР°С‡РёС‚, РµСЃР»Рё РЅРµС‚ РїРѕР»СЏ 'relays', С‚Рѕ СЌС‚Рѕ РѕС€РёР±РєР° С„РѕСЂРјР°С‚Р°
     DoMessage('Invalid JSON format: no "relays" array found', False);
     Exit;
   end;
@@ -301,33 +301,33 @@ begin
 
     Relay := TTorRelay.Create;
     try
-      // 1. Парсим fingerprint (всегда строка)
+      // 1. РџР°СЂСЃРёРј fingerprint (РІСЃРµРіРґР° СЃС‚СЂРѕРєР°)
       CountryValue := RelayObj.GetValue('fingerprint');
       if (CountryValue <> nil) and (CountryValue is TJSONString) then
         Relay.Fingerprint := TJSONString(CountryValue).Value
       else
         Relay.Fingerprint := 'unknown';
 
-      // 2. Парсим nickname
+      // 2. РџР°СЂСЃРёРј nickname
       CountryValue := RelayObj.GetValue('nickname');
       if (CountryValue <> nil) and (CountryValue is TJSONString) then
         Relay.Nickname := TJSONString(CountryValue).Value
       else
         Relay.Nickname := 'unnamed';
 
-      // 3. ПАРСИМ СТРАНУ
+      // 3. РџРђР РЎРРњ РЎРўР РђРќРЈ
       CountryCode := '??';
       CountryValue := RelayObj.GetValue('country');
 
       if CountryValue <> nil then
       begin
-        // Вариант 1: строка (например, "US")
+        // Р’Р°СЂРёР°РЅС‚ 1: СЃС‚СЂРѕРєР° (РЅР°РїСЂРёРјРµСЂ, "US")
         if CountryValue is TJSONString then
         begin
           CountryCode := TJSONString(CountryValue).Value;
           IsValidCountry := True;
         end
-        // Вариант 2: массив строк (например, ["US", "DE"])
+        // Р’Р°СЂРёР°РЅС‚ 2: РјР°СЃСЃРёРІ СЃС‚СЂРѕРє (РЅР°РїСЂРёРјРµСЂ, ["US", "DE"])
         else if CountryValue is TJSONArray then
         begin
           if TJSONArray(CountryValue).Count > 0 then
@@ -338,7 +338,7 @@ begin
           end;
           IsValidCountry := True;
         end
-        // Вариант 3: объект или другой тип
+        // Р’Р°СЂРёР°РЅС‚ 3: РѕР±СЉРµРєС‚ РёР»Рё РґСЂСѓРіРѕР№ С‚РёРї
         else if CountryValue is TJSONObject then
         begin
           DoMessage(Format('Warning: Country is object for relay %s', [Relay.Nickname]), False);
@@ -346,7 +346,7 @@ begin
         end
         else
         begin
-          // Пробуем получить значение как строку (для чисел и булевых)
+          // РџСЂРѕР±СѓРµРј РїРѕР»СѓС‡РёС‚СЊ Р·РЅР°С‡РµРЅРёРµ РєР°Рє СЃС‚СЂРѕРєСѓ (РґР»СЏ С‡РёСЃРµР» Рё Р±СѓР»РµРІС‹С…)
           CountryCode := CountryValue.Value;
           IsValidCountry := True;
         end;
@@ -356,7 +356,7 @@ begin
 
       Relay.CountryCode := CountryCode;
 
-      // 4. Парсим порты
+      // 4. РџР°СЂСЃРёРј РїРѕСЂС‚С‹
       CountryValue := RelayObj.GetValue('or_port');
       if CountryValue <> nil then
       begin
@@ -383,24 +383,24 @@ begin
       else
         Relay.DirPort := 80;
 
-      // 5. Парсим адреса
+      // 5. РџР°СЂСЃРёРј Р°РґСЂРµСЃР°
       OrAddresses := '';
       IsValidAddress := False;
 
-      // Сначала пробуем 'or_addresses', затем 'a'
+      // РЎРЅР°С‡Р°Р»Р° РїСЂРѕР±СѓРµРј 'or_addresses', Р·Р°С‚РµРј 'a'
       CountryValue := RelayObj.GetValue('or_addresses');
       if CountryValue = nil then
         CountryValue := RelayObj.GetValue('a');
 
       if CountryValue <> nil then
       begin
-        // Вариант 1: строка с адресом "IP:PORT" или "IP"
+        // Р’Р°СЂРёР°РЅС‚ 1: СЃС‚СЂРѕРєР° СЃ Р°РґСЂРµСЃРѕРј "IP:PORT" РёР»Рё "IP"
         if CountryValue is TJSONString then
         begin
           OrAddresses := TJSONString(CountryValue).Value;
           IsValidAddress := True;
         end
-        // Вариант 2: массив адресов ["IP1:PORT", "IP2:PORT"]
+        // Р’Р°СЂРёР°РЅС‚ 2: РјР°СЃСЃРёРІ Р°РґСЂРµСЃРѕРІ ["IP1:PORT", "IP2:PORT"]
         else if CountryValue is TJSONArray then
         begin
           if TJSONArray(CountryValue).Count > 0 then
@@ -415,7 +415,7 @@ begin
         end;
       end;
 
-      // Разбираем полученный адрес
+      // Р Р°Р·Р±РёСЂР°РµРј РїРѕР»СѓС‡РµРЅРЅС‹Р№ Р°РґСЂРµСЃ
       if IsValidAddress and (OrAddresses <> '') then
       begin
         AddrParts := OrAddresses.Split([':']);
@@ -429,13 +429,13 @@ begin
         DoMessage(Format('Warning: No valid address for relay %s', [Relay.Nickname]), False);
       end;
 
-      // 6. Применяем фильтр по стране и добавляем реле
+      // 6. РџСЂРёРјРµРЅСЏРµРј С„РёР»СЊС‚СЂ РїРѕ СЃС‚СЂР°РЅРµ Рё РґРѕР±Р°РІР»СЏРµРј СЂРµР»Рµ
       if ((FCountryFilter = '') or (UpperCase(Relay.CountryCode) = FCountryFilter)) and
          (Relay.Address <> '') then
       begin
         FRelays.Add(Relay);
 
-        // Логируем каждое 10-е реле
+        // Р›РѕРіРёСЂСѓРµРј РєР°Р¶РґРѕРµ 10-Рµ СЂРµР»Рµ
         if (FRelays.Count mod 10 = 0) then
           DoMessage(Format('Added %d relays...', [FRelays.Count]));
       end
@@ -494,7 +494,7 @@ begin
     HTTPClient.ConnectionTimeout := FTimeoutMS;
     HTTPClient.ResponseTimeout := FTimeoutMS * 2;
 
-    // Дополнительные настройки для избежания ошибок соединения
+    // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё РґР»СЏ РёР·Р±РµР¶Р°РЅРёСЏ РѕС€РёР±РѕРє СЃРѕРµРґРёРЅРµРЅРёСЏ
     HTTPClient.Accept := 'application/json';
     HTTPClient.ContentType := 'application/json';
 
@@ -514,7 +514,7 @@ begin
     on E: ENetHTTPClientException do
     begin
       DoMessage('Network error: ' + E.Message, False);
-      // Продолжаем пробовать другие источники
+      // РџСЂРѕРґРѕР»Р¶Р°РµРј РїСЂРѕР±РѕРІР°С‚СЊ РґСЂСѓРіРёРµ РёСЃС‚РѕС‡РЅРёРєРё
     end;
     on E: Exception do
     begin
@@ -540,7 +540,7 @@ begin
       Result := TCPClient.Connected;
       TCPClient.Disconnect;
     except
-      Result := False; // Любая ошибка = порт недоступен
+      Result := False; // Р›СЋР±Р°СЏ РѕС€РёР±РєР° = РїРѕСЂС‚ РЅРµРґРѕСЃС‚СѓРїРµРЅ
     end;
   finally
     TCPClient.Free;
