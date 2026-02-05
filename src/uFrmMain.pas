@@ -36,6 +36,7 @@ type
     procedure cmdStartExecute(Sender: TObject);
     procedure LbLogDrawItem(Control: TWinControl; Index: Integer; Rect: TRect;
       State: TOwnerDrawState);
+    procedure cmdStartUpdate(Sender: TObject);
   private
     FScanner: TRelayGrabber;
     function CalculateMaxWidth: Integer;
@@ -57,7 +58,8 @@ implementation
 {$R *.dfm}
 
 uses
-  Vcl.Themes;
+  Vcl.Themes,
+  System.StrUtils;
 
 function TFrmMain.CalculateMaxWidth: Integer;
 var
@@ -78,9 +80,12 @@ end;
 procedure TFrmMain.cmdStartExecute(Sender: TObject);
 begin
   if FScanner <> nil then
+  begin
     FScanner.Terminate;
-  if cmdStart.Caption = 'Stop' then
+    ProgressBar1.Visible := false;
+    StatusBar.Panels[0].Text := 'Stopping grab';
     Exit;
+  end;
 
   StatusBar.Panels[0].Text := 'Started grab';
   MemResult.Clear;
@@ -91,7 +96,13 @@ begin
   FScanner.OnComplete := OnScannerComplete;
   FScanner.OnMessage := OnScannerMessage;
   FScanner.Start;
-  cmdStart.Caption := 'Stop';
+  cmdStart.Update;
+end;
+
+procedure TFrmMain.cmdStartUpdate(Sender: TObject);
+begin
+  cmdStart.Caption := IfThen(Assigned(FScanner), 'Stop', 'Start');
+  cmdStart.Enabled := not (Assigned(FScanner) and FScanner.Terminated);
 end;
 
 procedure TFrmMain.LbLogDrawItem(Control: TWinControl; Index: Integer;
@@ -107,13 +118,13 @@ begin
   end
   else
   begin
-    // Иначе рисуем стандартный фон
+    // РРЅР°С‡Рµ СЂРёСЃСѓРµРј СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ С„РѕРЅ
     LbLog.Canvas.Brush.Color := StyleServices.GetSystemColor(clWindow);
     b := Byte(IntPtr(LbLog.Items.Objects[Index]));
     case b of
       0: c := clRed;
       1: c := clGreen;
-      2: c := clBlue;
+      2: c := $bb7840; // clBlue
     end;
   end;
   LbLog.Canvas.FillRect(Rect);
@@ -144,7 +155,7 @@ begin
   StatusBar.Panels[0].Text := 'Ready';
   StatusBar.Panels[1].Text := '';
   FScanner := nil;
-  cmdStart.Caption := 'Start';
+  cmdStart.Update;
 end;
 
 procedure TFrmMain.OnScannerMessage(Sender: TObject; const Msg: string;
