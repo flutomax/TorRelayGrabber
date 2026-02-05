@@ -40,7 +40,6 @@ type
     FResults: TObjectList<TTorRelay>;
     FMaxRelays: Integer;
     FCountryFilter: string;
-    FTimeoutMS: Integer;
     FOnStarting: TNotifyEvent;
     FOnProgress: TScanProgressEvent;
     FOnComplete: TScanCompleteEvent;
@@ -49,7 +48,8 @@ type
     FCurrentSource: string;
     // Массив резервных URL (в порядке приоритета)
     class var FDataSourceURLs: TArray<string>;
-    function CheckRelayPort(const AAddress: string; APort: Integer): Boolean;
+    class var FTimeoutMS: Integer;
+    class constructor Create;
     function TryFetchFromURL(const AURL: string): TJSONObject;
     function TryFetchFromResource(): TJSONObject;
     procedure FetchRelaysFromAnySource;
@@ -65,6 +65,10 @@ type
       ATimeoutMS: Integer = 5000);
     destructor Destroy; override;
     class procedure AddDataSource(const AURL: string);
+    class function CheckRelayPort(const AAddress: string; APort: Integer): Boolean;
+    class function CheckTorRelay(const AAddress: string; APort: Integer;
+      var AError: string): Boolean;
+    property Terminated;
     property OnStarting: TNotifyEvent read FOnStarting write FOnStarting;
     property OnProgress: TScanProgressEvent read FOnProgress write FOnProgress;
     property OnComplete: TScanCompleteEvent read FOnComplete write FOnComplete;
@@ -79,7 +83,10 @@ implementation
 
 uses
   System.NetEncoding,
-  System.Math;
+  System.StrUtils,
+  System.Math,
+  IdStack,
+  IdExceptionCore;
 
 procedure ShuffleJSONArray(JSONArray: TJSONArray);
 var
@@ -108,6 +115,12 @@ begin
   finally
     tempList.Free;
   end;
+end;
+
+
+class constructor TRelayGrabber.Create;
+begin
+  FTimeoutMS := 5000;
 end;
 
 constructor TRelayGrabber.Create(const ACountryFilter: string; AMaxRelays,
@@ -149,6 +162,7 @@ procedure TRelayGrabber.Execute;
 var
   I, n, m, AliveCount: Integer;
   Relay: TTorRelay;
+  msg: string;
 begin
   try
     // 1. Получение списка реле
@@ -178,8 +192,12 @@ begin
       DoProgress(n, m, Format('Checking %s (%s:%d) %s...',
         [Relay.Fingerprint, Relay.Address, Relay.ORPort, Relay.CountryCode]));
 
+      msg := 'Relay port error';
       // Проверяем ORPort (основной порт Tor)
       Relay.IsAlive := CheckRelayPort(Relay.Address, Relay.ORPort);
+      if Relay.IsAlive then
+        Relay.IsAlive := CheckTorRelay(Relay.Address, Relay.ORPort, msg);
+
       if Relay.IsAlive then
       begin
         Inc(AliveCount);
@@ -189,8 +207,7 @@ begin
       end
       else
       begin
-        // Дополнительная проверка DirPort (если нужно)
-        // Relay.IsAlive := CheckRelayPort(Relay.Address, Relay.DirPort);
+        DoMessage(msg, False);
       end;
     end;
 
@@ -523,7 +540,7 @@ begin
   end;
 end;
 
-function TRelayGrabber.CheckRelayPort(const AAddress: string; APort: Integer): Boolean;
+class function TRelayGrabber.CheckRelayPort(const AAddress: string; APort: Integer): Boolean;
 var
   TCPClient: TIdTCPClient;
 begin
@@ -544,6 +561,57 @@ begin
     end;
   finally
     TCPClient.Free;
+  end;
+end;
+
+class function TRelayGrabber.CheckTorRelay(const AAddress: string; APort: Integer;
+  var AError: string): Boolean;
+var
+  TCPClient: TIdTCPClient;
+  StartTime: Cardinal;
+begin
+  Result := False;
+  AError := '';
+  TCPClient := TIdTCPClient.Create(nil);
+  StartTime := GetTickCount;
+
+  try
+    TCPClient.ConnectTimeout := FTimeoutMS;
+    TCPClient.ReadTimeout := 2000; // Для быстрой проверки
+    TCPClient.Host := AAddress;
+    TCPClient.Port := APort;
+
+    try
+      // 1. Основная проверка - TCP подключение
+      TCPClient.Connect;
+
+      Result := TCPClient.Connected;
+
+      if not Result then
+      begin
+        AError := 'TCP connection failed';
+        Exit;
+      end;
+
+    except
+      on E: EIdSocketError do
+        AError := Format('Socket error %d', [E.LastError]);
+      on E: EIdConnectTimeout do
+        AError := 'Connection timeout';
+      on E: Exception do
+        AError := E.Message;
+    end;
+
+  finally
+    if TCPClient.Connected then
+      TCPClient.Disconnect;
+    TCPClient.Free;
+  end;
+
+  // Финальная гарантия: если Result=True, но AError пуст
+  if AError = '' then
+  begin
+    AError := IfThen(Result, 'Connected successfully', 'Checking error');
   end;
 end;
 
